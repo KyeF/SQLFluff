@@ -1,0 +1,79 @@
+import yaml
+
+sqlfluff = """
+# Write updates to .sqlfluff rules to `generate_sqlfluff.py`
+# If SQLFluff fails with
+# Failure in Python templating: 'table'. Have you configured your variables?
+# ensure the table is reflected in `metadata/tables.yaml` and run `python generate_sqlfluff.py`.
+
+[sqlfluff]
+dialect = redshift
+
+exclude_rules = L003, L018, L022, L036, L041, L042, L034
+# L003 : Indentation
+# L018 : CTE closing bracket position
+# L022 : Blank line after CTE
+# L036 : Amount of columns in one line (1 vs. how many fit within line length)
+# L041 : SELECT modifiers (e.g. DISTINCT) must be on the same line as SELECT
+
+warnings = L016
+max_line_length = 88
+
+templater = python
+
+[sqlfluff:indentation]
+indent_unit = space
+tab_space_size = 4
+indented_joins = False
+indented_using_on = True
+trailing_comments = before
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.functions]
+extended_capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = consistent
+
+[sqlfluff:rules:capitalisation.types]
+extended_capitalisation_policy = upper
+
+[sqlfluff:rules:ambiguous.join]
+fully_qualify_join_types = inner
+
+[sqlfluff:layout:type:alias_expression]
+spacing_before = align
+align_within = select_clause
+align_scope = bracketed
+
+[sqlfluff:rules:layout.newlines]
+maximum_empty_lines_between_statements = 0
+maximum_empty_lines_inside_statements = 0
+
+[sqlfluff:rules:convention.casting_style]
+preferred_type_casting_style = shorthand
+
+[sqlfluff:rules:references.special_chars]
+additional_allowed_characters = {,}
+
+[sqlfluff:templater:jinja:context]
+
+[sqlfluff:templater:python:context]
+input_table = my_table
+"""
+
+tbl = ""
+
+with open(f"metadata/tables.yaml") as tables:
+    table_dict = yaml.safe_load(tables)
+
+    for table, replacement in table_dict.items():
+        tbl += "\n" + table + "=" + replacement
+
+with open(".sqlfluff", "w") as file:
+    file.write(sqlfluff)
+    file.write(tbl)
+
+print(".sqlfluff file updated")
